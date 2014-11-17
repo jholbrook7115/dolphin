@@ -20,10 +20,12 @@ void EjectVolume()
 {
 	if (g_pVolume)
 	{
+
 		// This code looks scary. Can the try/catch stuff be removed?
 		// This cause a "Unhandled exception ... Access violation
 		// reading location ..." after you have started and stopped two
 		// or three games
+		//Took out try catch, checking to see if it crashes
 		delete g_pVolume;
 		g_pVolume = nullptr;
 	}
@@ -91,8 +93,9 @@ bool IsValid()
 
 bool IsWii()
 {
-	if (g_pVolume)
-		return IsVolumeWiiDisc(g_pVolume);
+	if (g_pVolume){	
+	return IsVolumeWiiDisc(g_pVolume);
+	}
 
 	return false;
 }
