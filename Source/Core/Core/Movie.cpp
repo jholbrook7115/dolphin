@@ -86,32 +86,23 @@ static WiiManipFunction wiimfunc = nullptr;
 
 static void EnsureTmpInputSize(size_t bound)
 {
-	//bit shifting to get the nearest, higher power of 2
-	//likely faster than multiplication		
-	size_t bit_temp = bound;
-	bit_temp--;
-	bit_temp |= bit_temp >> 1;
-	bit_temp |= bit_temp >> 2;
-	bit_temp |= bit_temp >> 4;
-	bit_temp |= bit_temp >> 8;
-	bit_temp |= bit_temp >> 16;	
-	bit_temp++;
-	
-	
-	if(bit_temp < DTM_BASE_LENGTH)
-		newAlloc = DTM_BASE_LENGTH;
-	else	
-		newAlloc = bit_temp;
-
 	if (tmpInputAllocated >= bound)
 		return;
-	// The buffer expands in powers of two of DTM_BASE_LENGTH
-	// (standard exponential buffer growth).
-	/*
-	size_t newAlloc = DTM_BASE_LENGTH;
-	while (newAlloc < bound)
-		newAlloc *= 2;
-	*/
+	
+	//gets the nearest, higher power of 2 val of bound
+	//should be better performance-wise than multiplying in a loop	
+	size_t newAlloc = bound;
+	newAlloc--;
+	newAlloc |= newAlloc >> 1;
+	newAlloc |= newAlloc >> 2;
+	newAlloc |= newAlloc >> 4;
+	newAlloc |= newAlloc >> 8;
+	newAlloc |= newAlloc >> 16;	
+	newAlloc++;
+	//make sure that the new size is still bigger than the min
+	if (newAlloc < DTM_BASE_LENGTH)
+		newAlloc = DTM_BASE_LENGTH;
+
 	u8* newTmpInput = new u8[newAlloc];
 	tmpInputAllocated = newAlloc;
 	if (tmpInput != nullptr)
