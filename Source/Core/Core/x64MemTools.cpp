@@ -104,7 +104,8 @@ void CheckKR(const char* name, kern_return_t kr)
 
 void ExceptionThread(mach_port_t port)
 {
-	Common::SetCurrentThreadName("Mach exception thread");
+	Common::SetCurrentThreadName("Mach exception thread ppack(4)
+		");
 	#pragma pack(4)
 	struct
 	{

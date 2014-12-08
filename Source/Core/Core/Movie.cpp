@@ -88,11 +88,20 @@ static void EnsureTmpInputSize(size_t bound)
 {
 	if (tmpInputAllocated >= bound)
 		return;
-	// The buffer expands in powers of two of DTM_BASE_LENGTH
-	// (standard exponential buffer growth).
-	size_t newAlloc = DTM_BASE_LENGTH;
-	while (newAlloc < bound)
-		newAlloc *= 2;
+	
+	//gets the nearest, higher power of 2 val of bound
+	//should be better performance-wise than multiplying in a loop	
+	size_t newAlloc = bound;
+	newAlloc--;
+	newAlloc |= newAlloc >> 1;
+	newAlloc |= newAlloc >> 2;
+	newAlloc |= newAlloc >> 4;
+	newAlloc |= newAlloc >> 8;
+	newAlloc |= newAlloc >> 16;	
+	newAlloc++;
+	//make sure that the new size is still bigger than the min
+	if (newAlloc < DTM_BASE_LENGTH)
+		newAlloc = DTM_BASE_LENGTH;
 
 	u8* newTmpInput = new u8[newAlloc];
 	tmpInputAllocated = newAlloc;
