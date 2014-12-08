@@ -2,6 +2,10 @@
 // Licensed under GPLv2
 // Refer to the license.txt file included.
 
+//added ctime include
+#include <ctime>
+//
+
 #include <algorithm>
 #include <cstring>
 
@@ -18,11 +22,12 @@
 
 CFileSearch::CFileSearch(const CFileSearch::XStringVector& _rSearchStrings, const CFileSearch::XStringVector& _rDirectories)
 {
-	// Reverse the loop order for speed?
-	for (auto& _rSearchString : _rSearchStrings)
+	// Reverse the loop order for speed
+	for (auto& _rDirectory : _rDirectories)
 	{
-		for (auto& _rDirectory : _rDirectories)
+		for (auto& _rSearchString : _rSearchStrings)
 		{
+			
 			FindFiles(_rSearchString, _rDirectory);
 		}
 	}
