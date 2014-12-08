@@ -1,0 +1,154 @@
+diff --git a/Source/Core/Common/FileSearch.cpp b/Source/Core/Common/FileSearch.cpp
+index 84026dd..204d138 100644
+--- a/Source/Core/Common/FileSearch.cpp
++++ b/Source/Core/Common/FileSearch.cpp
+@@ -2,6 +2,10 @@
+ // Licensed under GPLv2
+ // Refer to the license.txt file included.
+ 
++//added ctime include
++#include <ctime>
++//
++
+ #include <algorithm>
+ #include <cstring>
+ 
+@@ -18,11 +22,12 @@
+ 
+ CFileSearch::CFileSearch(const CFileSearch::XStringVector& _rSearchStrings, const CFileSearch::XStringVector& _rDirectories)
+ {
+-	// Reverse the loop order for speed?
+-	for (auto& _rSearchString : _rSearchStrings)
++	// Reverse the loop order for speed
++	for (auto& _rDirectory : _rDirectories)
+ 	{
+-		for (auto& _rDirectory : _rDirectories)
++		for (auto& _rSearchString : _rSearchStrings)
+ 		{
++			
+ 			FindFiles(_rSearchString, _rDirectory);
+ 		}
+ 	}
+diff --git a/Source/Core/Core/Movie.cpp b/Source/Core/Core/Movie.cpp
+index 17f0790..37035ff 100644
+--- a/Source/Core/Core/Movie.cpp
++++ b/Source/Core/Core/Movie.cpp
+@@ -88,11 +88,20 @@ static void EnsureTmpInputSize(size_t bound)
+ {
+ 	if (tmpInputAllocated >= bound)
+ 		return;
+-	// The buffer expands in powers of two of DTM_BASE_LENGTH
+-	// (standard exponential buffer growth).
+-	size_t newAlloc = DTM_BASE_LENGTH;
+-	while (newAlloc < bound)
+-		newAlloc *= 2;
++	
++	//gets the nearest, higher power of 2 val of bound
++	//should be better performance-wise than multiplying in a loop	
++	size_t newAlloc = bound;
++	newAlloc--;
++	newAlloc |= newAlloc >> 1;
++	newAlloc |= newAlloc >> 2;
++	newAlloc |= newAlloc >> 4;
++	newAlloc |= newAlloc >> 8;
++	newAlloc |= newAlloc >> 16;	
++	newAlloc++;
++	//make sure that the new size is still bigger than the min
++	if (newAlloc < DTM_BASE_LENGTH)
++		newAlloc = DTM_BASE_LENGTH;
+ 
+ 	u8* newTmpInput = new u8[newAlloc];
+ 	tmpInputAllocated = newAlloc;
+diff --git a/Source/Core/Core/VolumeHandler.cpp b/Source/Core/Core/VolumeHandler.cpp
+index 1c52275..9eafa20 100644
+--- a/Source/Core/Core/VolumeHandler.cpp
++++ b/Source/Core/Core/VolumeHandler.cpp
+@@ -20,10 +20,12 @@ void EjectVolume()
+ {
+ 	if (g_pVolume)
+ 	{
++
+ 		// This code looks scary. Can the try/catch stuff be removed?
+ 		// This cause a "Unhandled exception ... Access violation
+ 		// reading location ..." after you have started and stopped two
+ 		// or three games
++		//Took out try catch, checking to see if it crashes
+ 		delete g_pVolume;
+ 		g_pVolume = nullptr;
+ 	}
+@@ -91,8 +93,9 @@ bool IsValid()
+ 
+ bool IsWii()
+ {
+-	if (g_pVolume)
+-		return IsVolumeWiiDisc(g_pVolume);
++	if (g_pVolume){	
++	return IsVolumeWiiDisc(g_pVolume);
++	}
+ 
+ 	return false;
+ }
+diff --git a/Source/Core/Core/x64MemTools.cpp b/Source/Core/Core/x64MemTools.cpp
+index 17e0237..8ff3113 100644
+--- a/Source/Core/Core/x64MemTools.cpp
++++ b/Source/Core/Core/x64MemTools.cpp
+@@ -104,7 +104,8 @@ void CheckKR(const char* name, kern_return_t kr)
+ 
+ void ExceptionThread(mach_port_t port)
+ {
+-	Common::SetCurrentThreadName("Mach exception thread");
++	Common::SetCurrentThreadName("Mach exception thread ppack(4)
++		");
+ 	#pragma pack(4)
+ 	struct
+ 	{
+diff --git a/ps3connect.sh b/ps3connect.sh
+new file mode 100644
+index 0000000..58074ba
+--- /dev/null
++++ b/ps3connect.sh
+@@ -0,0 +1,33 @@
++#!/bin/bash
++#check for zenity and attempt to install if not found
++#this will try to find the package and store the result of a grep on the return
++#using keywords. if it can't be found the string will be empty and the module 
++#attempted to be installed
++checked = 0;
++if [ $(dpkg-query -W -f='${Status}' zenity 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
++ gksudo apt-get install zenity > /dev/null
++ checked = 1;
++fi
++
++#zenity *could* be used to pipe the password to sudo -A (i think),
++#but storing the pword in plain text in mem might be retarded
++#gksudo is a better option for gui pword and is ALMOST always
++#installed by default	      
++if [ $checked -eq 0]; then
++  gksudo apt-add-repository ppa:falk-t-j/qtsixa > /dev/null #no one wants to see all that
++else
++  sudo apt-add-repository ppa:falk-t-j/qtsixa > /dev/null
++fi
++#update repos
++sudo apt-get update > /dev/null
++echo "update"
++sudo apt-get install sixad > /dev/null
++zenity --info --text="Connect the PS3 controller"
++sudo sixpair #> /dev/null
++zenity --info --text="Unplug the PS3 controller"
++zenity --info --text="Press the home button!" 
++ 
++sudo sixad --start #> /dev/null
++
++
++ 
+diff --git a/remove_ps3.sh b/remove_ps3.sh
+new file mode 100644
+index 0000000..bab655f
+--- /dev/null
++++ b/remove_ps3.sh
+@@ -0,0 +1,5 @@
++#!/bin/bash
++sudo apt-get --force-yes --yes remove zenity > /dev/null
++sudo apt-get --force-yes --yes remove sixad > /dev/null
++sudo apt-get --force-yes --yes autoremove > /dev/null
++echo "Removed some shit"
